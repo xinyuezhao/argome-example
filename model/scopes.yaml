@@ -1,0 +1,36 @@
+
+kind: Scope
+metadata:
+  name: base
+---
+kind: Scope
+metadata:
+  name: gocommon
+  extends:
+    - base
+spec:
+  local-import-prefix: golang.cisco.com/examples/example/gen
+  external-packages:
+    - alias: mo
+      target-import: golang.cisco.com/argo/pkg/mo
+  type-mappings:
+    - ddr-type: time
+      target-type: time.Time
+      alias: time
+      target-import: time
+    - ddr-type: uuid
+      target-type: uuid.UUID
+      alias: uuid
+      target-import: github.com/gofrs/uuid
+    - ddr-type: Version
+      target-type: int8
+    - ddr-type: Status
+      target-type: int8
+    - ddr-type: StringList
+      target-type: []string
+---
+kind: GlobalDefault
+target-kind: ".*"
+metadata:
+  scope: base
+---
