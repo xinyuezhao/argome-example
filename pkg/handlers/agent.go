@@ -45,7 +45,11 @@ func AgentHandler(ctx context.Context, event mo.Event) error {
 		if err != nil {
 			return err
 		}
-		if err := core.NewError(agent.SpecMutable().SetToken(agentToken.Token)); err != nil {
+
+		if err := core.NewError(agent.SpecMutable().SetToken(agentToken.Token),
+			agent.SpecMutable().SetCreatedAt(agentToken.CreatedAt.String()),
+			agent.SpecMutable().SetID(agentToken.ID),
+			agent.SpecMutable().SetLastUsedAt(agentToken.LastUsedAt.String())); err != nil {
 			return err
 		}
 		if err := event.Store().Record(ctx, agent); err != nil {
