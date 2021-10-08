@@ -1,13 +1,13 @@
 apiVersion: example.argo.cisco.com/v1
 kind: Resource
 metadata:
-  name: World
+  name: Agent
   group: example.argo.cisco.com
   version: v1
 spec:
-  pkey: spec.name
-  spec: 
-    type: v1.WorldSpec
+  spec:
+    type: v1.AgentSpec
+  pkey: spec.Token
   apimethods:
     - apimethod: GET
     - apimethod: PUT
@@ -16,27 +16,33 @@ spec:
 ---
 kind: Struct
 metadata:
-  name: WorldSpec
+  name: AgentSpec
   group: example.argo.cisco.com
   version: v1
 spec:
   props:
-    - prop: name
+    - prop: ID
       type: string
-    - prop: description
+    - prop: CreatedAt
+      type: string
+    - prop: Description
+      type: string
+    - prop: LastUsedAt
+      type: string
+    - prop: Token
       type: string
 ---
 kind: ResourceHandler
 metadata:
-  name: WorldHandler
+  name: AgentHandler
 spec:
-  resource: example.argo.cisco.com/v1.World
+  resource: example.argo.cisco.com/v1.Agent
   operations:
     - CREATE
     - UPDATE
     - DELETE
   retryStrategy:
     delay: 500
-  concurrencyKey: world
-  function: golang.cisco.com/examples/example/pkg/handlers.WorldHandler
+  concurrencyKey: agent
+  function: golang.cisco.com/examples/example/pkg/handlers.AgentHandler
   specStatusDiscriminator: both

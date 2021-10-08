@@ -7,6 +7,7 @@ replace golang.cisco.com/argo => ../argo
 require (
 	github.com/go-logr/zapr v0.4.0
 	github.com/golangci/golangci-lint v1.42.1
+	github.com/hashicorp/go-tfe v0.19.0
 	github.com/julienschmidt/httprouter v1.3.0 // indirect
 	github.com/prometheus/common v0.14.0 // indirect
 	go.uber.org/zap v1.17.0
