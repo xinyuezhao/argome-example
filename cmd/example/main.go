@@ -21,7 +21,7 @@ func onStart(ctx context.Context, changer mo.Changer) error {
 func main() {
 	if err := service.New("example", schema.Schema()).
 		OnStart(onStart).
-		Start(handlers.AgentHandler); err != nil {
+		Start(handlers.OrganizationHandler); err != nil {
 		panic(err)
 	}
 }

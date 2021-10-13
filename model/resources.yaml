@@ -1,48 +1,87 @@
 apiVersion: example.argo.cisco.com/v1
 kind: Resource
 metadata:
-  name: Agent
+  name: Organization
   group: example.argo.cisco.com
   version: v1
 spec:
   spec:
-    type: v1.AgentSpec
-  pkey: spec.Description
+    type: v1.OrganizationSpec
+  pkey: spec.Name
   apimethods:
     - apimethod: GET
-    - apimethod: PUT
-    - apimethod: POST
-    - apimethod: DELETE
+      actions:
+          - action: golang.cisco.com/examples/example/pkg/handlers.OrganizationQuery
 ---
 kind: Struct
 metadata:
-  name: AgentSpec
+  name: OrganizationSpec
   group: example.argo.cisco.com
   version: v1
 spec:
   props:
-    - prop: ID
+    - prop: Name
       type: string
+    - prop: CollaboratorAuthPolicy
+      type: string
+    - prop: CostEstimationEnabled
+      type: bool
     - prop: CreatedAt
       type: string
-    - prop: Description
+    - prop: Email
       type: string
-    - prop: LastUsedAt
+    - prop: ExternalID 
       type: string
-    - prop: Token
+    - prop: OwnersTeamSAMLRoleI
       type: string
+    - prop: Permissions
+      type: v1.OrganizationPermissions
+    - prop: SAMLEnabled
+      type: bool
+    - prop: SessionRemember
+      type: int
+    - prop: SessionTimeout
+      type: int
+    - prop: TrialExpiresAt
+      type: string
+    - prop: TwoFactorConformant
+      type: bool
+---
+kind: Struct
+metadata:
+  name: OrganizationPermissions
+  group: example.argo.cisco.com
+  version: v1
+spec:
+  props:
+    - prop: CanCreateTeam
+      type: bool
+    - prop: CanCreateWorkspace
+      type: bool
+    - prop: CanCreateWorkspaceMigration
+      type: bool
+    - prop: CanDestroy
+      type: bool
+    - prop: CanTraverse
+      type: bool
+    - prop: CanUpdate
+      type: bool
+    - prop: CanUpdateAPIToken
+      type: bool
+    - prop: CanUpdateOAuth
+      type: bool
+    - prop: CanUpdateSentinel
+      type: bool
 ---
 kind: ResourceHandler
 metadata:
-  name: AgentHandler
+  name: OrganizationHandler
 spec:
-  resource: example.argo.cisco.com/v1.Agent
+  resource: example.argo.cisco.com/v1.Organization
   operations:
     - CREATE
-    - UPDATE
-    - DELETE
   retryStrategy:
     delay: 500
-  concurrencyKey: agent
-  function: golang.cisco.com/examples/example/pkg/handlers.AgentHandler
+  concurrencyKey: organization
+  function: golang.cisco.com/examples/example/pkg/handlers.OrganizationHandler
   specStatusDiscriminator: both
