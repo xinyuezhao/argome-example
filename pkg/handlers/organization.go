@@ -70,22 +70,3 @@ func queryAllOrgs(ctx context.Context, client *tfe.Client) ([]*tfe.Organization,
 	}
 	return res, nil
 }
-
-func OrganizationQuery() ([]*tfe.Organization, error) {
-	config := &tfe.Config{
-		Token: "ai1yMKOzv3Mptg.atlasv1.lOseEHJzlB49Vz0fXTlFUFRGGTuugiP3040sr1MGGOkHgRqzQ9FrpiUJzyTH1DzzFTM",
-	}
-
-	client, err := tfe.NewClient(config)
-	if err != nil {
-		return nil, err
-	}
-
-	// Create a context
-	ctxTfe := context.Background()
-	orgs, err := queryAllOrgs(ctxTfe, client)
-	if err != nil {
-		return nil, err
-	}
-	return orgs, nil
-}
