@@ -10,8 +10,7 @@ spec:
   pkey: spec.Name
   apimethods:
     - apimethod: GET
-      actions:
-          - action: golang.cisco.com/examples/example/pkg/handlers.OrganizationQuery
+      override: true
 ---
 kind: Struct
 metadata:

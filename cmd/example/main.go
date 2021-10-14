@@ -19,9 +19,12 @@ func onStart(ctx context.Context, changer mo.Changer) error {
 }
 
 func main() {
+	handlerReg := []interface{}{
+		handlers.OrganizationHandler,
+	}
 	if err := service.New("example", schema.Schema()).
 		OnStart(onStart).
-		Start(handlers.OrganizationHandler); err != nil {
+		Start(handlerReg...); err != nil {
 		panic(err)
 	}
 }
