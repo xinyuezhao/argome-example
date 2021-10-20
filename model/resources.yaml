@@ -1,86 +1,54 @@
 apiVersion: example.argo.cisco.com/v1
 kind: Resource
 metadata:
-  name: Organization
+  name: AgentPool
   group: example.argo.cisco.com
   version: v1
 spec:
   spec:
-    type: v1.OrganizationSpec
-  pkey: spec.Name
+    type: v1.AgentPoolSpec
+  identity-rules:
+    - identity-rule: orgAgentPl
+      scope: org
+      prop-refs:
+        - prop-ref: spec.Organization
+          alias: organizations
+        - prop-ref: spec.Name
+          alias: agentname
+    - identity-rule: id
+      scope: org
+      prop-refs:
+        - prop-ref: spec.ID
+          alias: agentid
   apimethods:
     - apimethod: GET
+      override: true
+    - apimethod: POST
       override: true
 ---
 kind: Struct
 metadata:
-  name: OrganizationSpec
+  name: AgentPoolSpec
   group: example.argo.cisco.com
   version: v1
 spec:
   props:
     - prop: Name
       type: string
-    - prop: CollaboratorAuthPolicy
+    - prop: ID
       type: string
-    - prop: CostEstimationEnabled
-      type: bool
-    - prop: CreatedAt
+    - prop: Organization
       type: string
-    - prop: Email
-      type: string
-    - prop: ExternalID 
-      type: string
-    - prop: OwnersTeamSAMLRoleI
-      type: string
-    - prop: Permissions
-      type: v1.OrganizationPermissions
-    - prop: SAMLEnabled
-      type: bool
-    - prop: SessionRemember
-      type: int
-    - prop: SessionTimeout
-      type: int
-    - prop: TrialExpiresAt
-      type: string
-    - prop: TwoFactorConformant
-      type: bool
----
-kind: Struct
-metadata:
-  name: OrganizationPermissions
-  group: example.argo.cisco.com
-  version: v1
-spec:
-  props:
-    - prop: CanCreateTeam
-      type: bool
-    - prop: CanCreateWorkspace
-      type: bool
-    - prop: CanCreateWorkspaceMigration
-      type: bool
-    - prop: CanDestroy
-      type: bool
-    - prop: CanTraverse
-      type: bool
-    - prop: CanUpdate
-      type: bool
-    - prop: CanUpdateAPIToken
-      type: bool
-    - prop: CanUpdateOAuth
-      type: bool
-    - prop: CanUpdateSentinel
-      type: bool
 ---
 kind: ResourceHandler
 metadata:
-  name: OrganizationHandler
+  name: AgentPoolHandler
 spec:
-  resource: example.argo.cisco.com/v1.Organization
+  resource: example.argo.cisco.com/v1.AgentPool
   operations:
     - CREATE
   retryStrategy:
     delay: 500
-  concurrencyKey: organization
-  function: golang.cisco.com/examples/example/pkg/handlers.OrganizationHandler
+  concurrencyKey: AgentPool
+  function: golang.cisco.com/examples/example/pkg/handlers.AgentPoolHandler
   specStatusDiscriminator: both
