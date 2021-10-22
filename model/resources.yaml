@@ -1,28 +1,19 @@
 apiVersion: example.argo.cisco.com/v1
 kind: Resource
 metadata:
-  name: AgentPool
+  name: AgentToken
   group: example.argo.cisco.com
   version: v1
 spec:
   spec:
-    type: v1.AgentPoolSpec
+    type: v1.AgentTokenSpec
   identity-rules:
-    - identity-rule: orgAgentPl
-      scope: org
-      prop-refs:
-        - prop-ref: spec.Organization
-          alias: organizations
-        - prop-ref: spec.Name
-          alias: agentname
     - identity-rule: id
       scope: org
       prop-refs:
         - prop-ref: spec.ID
-          alias: agentid
+          alias: agentTokenID
   apimethods:
-    - apimethod: GET
-      override: true
     - apimethod: POST
       override: true
     - apimethod: DELETE
@@ -30,64 +21,71 @@ spec:
 ---
 kind: Struct
 metadata:
-  name: AgentPoolSpec
+  name: AgentTokenSpec
   group: example.argo.cisco.com
   version: v1
 spec:
   props:
-    - prop: Name
+    - prop: Description
       type: string
     - prop: ID
       type: string
-    - prop: Organization
+    - prop: CreatedAt
+      type: string
+    - prop: LastUsedAt
+      type: string
+    - prop: AgentPoolID
       type: string
 ---
 kind: ResourceHandler
 metadata:
-  name: AgentPoolHandler
+  name: AgentTokenHandler
 spec:
-  resource: example.argo.cisco.com/v1.AgentPool
+  resource: example.argo.cisco.com/v1.AgentToken
   operations:
     - CREATE
   retryStrategy:
     delay: 500
-  concurrencyKey: AgentPool
-  function: golang.cisco.com/examples/example/pkg/handlers.AgentPoolHandler
+  concurrencyKey: AgentToken
+  function: golang.cisco.com/examples/example/pkg/handlers.AgentTokenHandler
   specStatusDiscriminator: both
 ---
 kind: Resource
 metadata:
-  name: OrgAgentPl
+  name: AgentTokenStored
   group: example.argo.cisco.com
   version: v1
 spec:
   spec:
-    type: v1.OrgAgentPlSpec
-  pkey: spec.Organization
+    type: v1.AgentTokenStored
+  pkey: spec.AgentTokenID
   apimethods:
-    - apimethod: GET
+    - apimethod: POST
+      override: true
+    - apimethod: DELETE
       override: true
 ---
 kind: Struct
 metadata:
-  name: OrgAgentPlSpec
+  name: AgentTokenStored
   group: example.argo.cisco.com
   version: v1
 spec:
   props:
-    - prop: Organization
+    - prop: AgentTokenID
       type: string
-    - prop: AgentPools
-      type: []v1.AgentPlSpec
+    - prop: AgentToken
+      type: string
 ---
-kind: Struct
+kind: ResourceHandler
 metadata:
-  name: AgentPlSpec
-  group: example.argo.cisco.com
-  version: v1
+  name: AgentTokenStoredHandler
 spec:
-  props:
-    - prop: Name
-      type: string
-    - prop: ID
-      type: string
+  resource: example.argo.cisco.com/v1.AgentTokenStored
+  operations:
+    - CREATE
+  retryStrategy:
+    delay: 500
+  concurrencyKey: AgentTokenStored
+  function: golang.cisco.com/examples/example/pkg/handlers.AgentTokenStoredHandler
+  specStatusDiscriminator: both
