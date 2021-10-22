@@ -25,6 +25,8 @@ spec:
       override: true
     - apimethod: POST
       override: true
+    - apimethod: DELETE
+      override: true
 ---
 kind: Struct
 metadata:
@@ -52,3 +54,40 @@ spec:
   concurrencyKey: AgentPool
   function: golang.cisco.com/examples/example/pkg/handlers.AgentPoolHandler
   specStatusDiscriminator: both
+---
+kind: Resource
+metadata:
+  name: OrgAgentPl
+  group: example.argo.cisco.com
+  version: v1
+spec:
+  spec:
+    type: v1.OrgAgentPlSpec
+  pkey: spec.Organization
+  apimethods:
+    - apimethod: GET
+      override: true
+---
+kind: Struct
+metadata:
+  name: OrgAgentPlSpec
+  group: example.argo.cisco.com
+  version: v1
+spec:
+  props:
+    - prop: Organization
+      type: string
+    - prop: AgentPools
+      type: []v1.AgentPlSpec
+---
+kind: Struct
+metadata:
+  name: AgentPlSpec
+  group: example.argo.cisco.com
+  version: v1
+spec:
+  props:
+    - prop: Name
+      type: string
+    - prop: ID
+      type: string
