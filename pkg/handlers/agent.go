@@ -87,67 +87,60 @@ func removeAgentPool(ctx context.Context, client *tfe.Client, agentPlID string) 
 	return nil
 }
 
-func AgentCreateHandler(ctx context.Context, event mo.Event) error {
+func AgentHandler(ctx context.Context, event mo.Event) error {
 	log := core.LoggerFromContext(ctx)
 	log.Info("handling Agent", "resource", event.Resource())
 	agent := event.Resource().(examplev1.Agent)
-	ctxTfe, client, err := configTFC()
-	if err != nil {
-		return err
-	}
-
-	agentToken, err := createAgentToken(ctxTfe, client, agent.Spec().AgentPool(), agent.Spec().Organization(), agent.Spec().Description())
-	if err != nil {
-		return err
-	}
-	if err := core.NewError(agent.SpecMutable().SetToken(agentToken.Token),
-		agent.SpecMutable().SetID(agentToken.ID)); err != nil {
-		return err
-	}
-
-	if err := event.Store().Record(ctx, agent); err != nil {
-		return err
-	}
-	if err := event.Store().Commit(ctx); err != nil {
-		core.LoggerFromContext(ctx).Error(err, "failed to commit Agent")
-		return err
-	}
-
-	log.Info("Token set " + agent.Spec().Token())
-	log.Info("ID set " + agent.Spec().ID())
-
-	return nil
-}
-
-func AgentDeleteHandler(ctx context.Context, event mo.Event) error {
-	log := core.LoggerFromContext(ctx)
-	log.Info("deleting Agent", "resource", event.Resource())
-	agent := event.Resource().(examplev1.Agent)
-	ctxTfe, client, err := configTFC()
-	if err != nil {
-		return err
-	}
-	tokenID := agent.Spec().ID()
 	agentPl := agent.Spec().AgentPool()
 	org := agent.Spec().Organization()
-	agentPools, _ := queryAgentPools(ctxTfe, client, org)
-	agentPool, queryErr := queryAgentPlByName(agentPools, agentPl)
-	if queryErr != nil {
-		return queryErr
-	}
-	removeErr := removeAgentToken(ctxTfe, client, tokenID)
-	if removeErr != nil {
-		return removeErr
-	}
-	// check whether the AgentPool is empty, delete the AgentPool if yes
-	tokensAfterDelete, err := queryAgentTokens(ctxTfe, client, tokenID)
+	operation := string(event.Operation())
+	ctxTfe, client, err := configTFC()
 	if err != nil {
-		return nil
+		return err
 	}
-	if len(tokensAfterDelete) == 0 {
-		removeEr := removeAgentPool(ctxTfe, client, agentPool.ID)
-		if removeEr != nil {
-			return removeEr
+	if operation == "CREATE" {
+		agentToken, err := createAgentToken(ctxTfe, client, agentPl, org, agent.Spec().Description())
+		if err != nil {
+			return err
+		}
+
+		if err := core.NewError(agent.SpecMutable().SetToken(agentToken.Token),
+			agent.SpecMutable().SetID(agentToken.ID)); err != nil {
+			return err
+		}
+
+		if err := event.Store().Record(ctx, agent); err != nil {
+			return err
+		}
+		if err := event.Store().Commit(ctx); err != nil {
+			core.LoggerFromContext(ctx).Error(err, "failed to commit Agent")
+			return err
+		}
+		log.Info("Token set " + agent.Spec().Token())
+		log.Info("ID set " + agent.Spec().ID())
+	}
+
+	if operation == "DELETE" {
+		tokenID := agent.Spec().ID()
+		agentPools, _ := queryAgentPools(ctxTfe, client, org)
+		agentPool, queryErr := queryAgentPlByName(agentPools, agentPl)
+		if queryErr != nil {
+			return queryErr
+		}
+		removeErr := removeAgentToken(ctxTfe, client, tokenID)
+		if removeErr != nil {
+			return removeErr
+		}
+		// check whether the AgentPool is empty, delete the AgentPool if yes
+		tokensAfterDelete, err := queryAgentTokens(ctxTfe, client, tokenID)
+		if err != nil {
+			return nil
+		}
+		if len(tokensAfterDelete) == 0 {
+			removeEr := removeAgentPool(ctxTfe, client, agentPool.ID)
+			if removeEr != nil {
+				return removeEr
+			}
 		}
 	}
 	return nil
