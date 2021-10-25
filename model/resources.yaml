@@ -1,27 +1,21 @@
 apiVersion: example.argo.cisco.com/v1
 kind: Resource
 metadata:
-  name: AgentToken
+  name: Agent
   group: example.argo.cisco.com
   version: v1
 spec:
   spec:
-    type: v1.AgentTokenSpec
-  identity-rules:
-    - identity-rule: id
-      scope: org
-      prop-refs:
-        - prop-ref: spec.ID
-          alias: agentTokenID
+    type: v1.AgentSpec
+  pkey: spec.ID
   apimethods:
+    - apimethod: GET
     - apimethod: POST
-      override: true
     - apimethod: DELETE
-      override: true
 ---
 kind: Struct
 metadata:
-  name: AgentTokenSpec
+  name: AgentSpec
   group: example.argo.cisco.com
   version: v1
 spec:
@@ -30,62 +24,38 @@ spec:
       type: string
     - prop: ID
       type: string
-    - prop: CreatedAt
+    - prop: AgentPool
       type: string
-    - prop: LastUsedAt
+    - prop: Organization
       type: string
-    - prop: AgentPoolID
+    - prop: Name
       type: string
+    - prop: Token
+      type: string
+      userAccess: invisible
 ---
 kind: ResourceHandler
 metadata:
-  name: AgentTokenHandler
+  name: AgentHandler
 spec:
-  resource: example.argo.cisco.com/v1.AgentToken
+  resource: example.argo.cisco.com/v1.Agent
   operations:
     - CREATE
   retryStrategy:
     delay: 500
-  concurrencyKey: AgentToken
-  function: golang.cisco.com/examples/example/pkg/handlers.AgentTokenHandler
+  concurrencyKey: Agent
+  function: golang.cisco.com/examples/example/pkg/handlers.AgentCreateHandler
   specStatusDiscriminator: both
 ---
-kind: Resource
-metadata:
-  name: AgentTokenStored
-  group: example.argo.cisco.com
-  version: v1
-spec:
-  spec:
-    type: v1.AgentTokenStored
-  pkey: spec.AgentTokenID
-  apimethods:
-    - apimethod: POST
-      override: true
-    - apimethod: DELETE
-      override: true
----
-kind: Struct
-metadata:
-  name: AgentTokenStored
-  group: example.argo.cisco.com
-  version: v1
-spec:
-  props:
-    - prop: AgentTokenID
-      type: string
-    - prop: AgentToken
-      type: string
----
 kind: ResourceHandler
 metadata:
-  name: AgentTokenStoredHandler
+  name: AgentHandler
 spec:
-  resource: example.argo.cisco.com/v1.AgentTokenStored
+  resource: example.argo.cisco.com/v1.Agent
   operations:
-    - CREATE
+    - DELETE
   retryStrategy:
     delay: 500
-  concurrencyKey: AgentTokenStored
-  function: golang.cisco.com/examples/example/pkg/handlers.AgentTokenStoredHandler
+  concurrencyKey: Agent
+  function: golang.cisco.com/examples/example/pkg/handlers.AgentDeleteHandler
   specStatusDiscriminator: both
