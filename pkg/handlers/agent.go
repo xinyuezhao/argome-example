@@ -91,9 +91,11 @@ func AgentHandler(ctx context.Context, event mo.Event) error {
 	log := core.LoggerFromContext(ctx)
 	log.Info("handling Agent", "resource", event.Resource())
 	agent := event.Resource().(examplev1.Agent)
+	log.Info("agent name given " + agent.Spec().Name())
 	agentPl := agent.Spec().AgentPool()
 	org := agent.Spec().Organization()
 	operation := string(event.Operation())
+	log.Info("operation is " + operation)
 	ctxTfe, client, err := configTFC()
 	if err != nil {
 		return err
@@ -132,7 +134,7 @@ func AgentHandler(ctx context.Context, event mo.Event) error {
 			return removeErr
 		}
 		// check whether the AgentPool is empty, delete the AgentPool if yes
-		tokensAfterDelete, err := queryAgentTokens(ctxTfe, client, tokenID)
+		tokensAfterDelete, err := queryAgentTokens(ctxTfe, client, agentPool.ID)
 		if err != nil {
 			return nil
 		}
