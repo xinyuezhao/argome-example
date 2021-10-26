@@ -10,6 +10,7 @@ spec:
   pkey: spec.Description
   apimethods:
     - apimethod: GET
+      override: true
     - apimethod: POST
     - apimethod: DELETE
 ---
@@ -32,7 +33,6 @@ spec:
       type: string
     - prop: Token
       type: string
-      userAccess: invisible
 ---
 kind: ResourceHandler
 metadata:

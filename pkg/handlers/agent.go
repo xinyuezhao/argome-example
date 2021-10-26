@@ -101,25 +101,28 @@ func AgentHandler(ctx context.Context, event mo.Event) error {
 		return err
 	}
 	if operation == "CREATE" {
-		agentToken, err := createAgentToken(ctxTfe, client, agentPl, org, agent.Spec().Description())
-		if err != nil {
-			return err
-		}
+		log.Info("token sent " + agent.Spec().Token())
+		if agent.Spec().Token() == "" {
+			log.Info("create agent without token")
+			agentToken, err := createAgentToken(ctxTfe, client, agentPl, org, agent.Spec().Description())
+			if err != nil {
+				return err
+			}
 
-		if err := core.NewError(agent.SpecMutable().SetToken(agentToken.Token),
-			agent.SpecMutable().SetID(agentToken.ID)); err != nil {
-			return err
+			if err := core.NewError(agent.SpecMutable().SetToken(agentToken.Token),
+				agent.SpecMutable().SetID(agentToken.ID)); err != nil {
+				return err
+			}
+			if err := event.Store().Record(ctx, agent); err != nil {
+				return err
+			}
+			if err := event.Store().Commit(ctx); err != nil {
+				core.LoggerFromContext(ctx).Error(err, "failed to commit Agent")
+				return err
+			}
 		}
-
-		if err := event.Store().Record(ctx, agent); err != nil {
-			return err
-		}
-		if err := event.Store().Commit(ctx); err != nil {
-			core.LoggerFromContext(ctx).Error(err, "failed to commit Agent")
-			return err
-		}
-		log.Info("Token set " + agent.Spec().Token())
 		log.Info("ID set " + agent.Spec().ID())
+		log.Info("Token set " + agent.Spec().Token())
 	}
 
 	if operation == "DELETE" {
