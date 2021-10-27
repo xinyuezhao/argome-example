@@ -7,7 +7,7 @@ metadata:
 spec:
   spec:
     type: v1.AgentSpec
-  pkey: spec.Description
+  pkey: spec.description
   apimethods:
     - apimethod: GET
     - apimethod: POST
@@ -20,19 +20,20 @@ metadata:
   version: v1
 spec:
   props:
-    - prop: Description
+    - prop: description
       type: string
-    - prop: ID
+    - prop: id
       type: string
-    - prop: AgentPool
+    - prop: agentpool
       type: string
-    - prop: Organization
+    - prop: agentpoolId
       type: string
-    - prop: Name
+    - prop: organization
       type: string
-    - prop: Token
+    - prop: name
       type: string
-      userAccess: invisible
+    - prop: token
+      type: string
 ---
 kind: ResourceHandler
 metadata:

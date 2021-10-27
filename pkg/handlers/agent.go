@@ -46,17 +46,18 @@ func queryAgentPools(ctx context.Context, client *tfe.Client, name string) ([]*t
 }
 
 // Create a new agentToken
-func createAgentToken(ctx context.Context, client *tfe.Client, agentPool, organization, desc string) (*tfe.AgentToken, error) {
+func createAgentToken(ctx context.Context, client *tfe.Client, agentPool, organization, desc string) (*tfe.AgentToken, string, error) {
 	agentPools, _ := queryAgentPools(ctx, client, organization)
 	agentPl, queryErr := queryAgentPlByName(agentPools, agentPool)
 	if queryErr != nil {
-		return nil, queryErr
+		return nil, "", queryErr
 	}
 	agentToken, err := client.AgentTokens.Generate(ctx, agentPl.ID, tfe.AgentTokenGenerateOptions{Description: &desc})
 	if err != nil {
-		return nil, err
+		return nil, "", err
 	}
-	return agentToken, nil
+	agentPlID := agentPl.ID
+	return agentToken, agentPlID, nil
 }
 
 // Delete an existing agentToken
@@ -92,7 +93,7 @@ func AgentHandler(ctx context.Context, event mo.Event) error {
 	log.Info("handling Agent", "resource", event.Resource())
 	agent := event.Resource().(examplev1.Agent)
 	log.Info("agent name given " + agent.Spec().Name())
-	agentPl := agent.Spec().AgentPool()
+	agentPl := agent.Spec().Agentpool()
 	org := agent.Spec().Organization()
 	operation := string(event.Operation())
 	log.Info("operation is " + operation)
@@ -104,13 +105,14 @@ func AgentHandler(ctx context.Context, event mo.Event) error {
 		log.Info("token is " + agent.Spec().Token())
 		if agent.Spec().Token() == "" {
 			log.Info("create agent without token")
-			agentToken, err := createAgentToken(ctxTfe, client, agentPl, org, agent.Spec().Description())
+			agentToken, agentPlID, err := createAgentToken(ctxTfe, client, agentPl, org, agent.Spec().Description())
 			if err != nil {
 				return err
 			}
 
 			if err := core.NewError(agent.SpecMutable().SetToken(agentToken.Token),
-				agent.SpecMutable().SetID(agentToken.ID)); err != nil {
+				agent.SpecMutable().SetId(agentToken.ID),
+				agent.SpecMutable().SetAgentpoolId(agentPlID)); err != nil {
 				return err
 			}
 			if err := event.Store().Record(ctx, agent); err != nil {
@@ -121,12 +123,12 @@ func AgentHandler(ctx context.Context, event mo.Event) error {
 				return err
 			}
 		}
-		log.Info("ID set " + agent.Spec().ID())
+		log.Info("ID set " + agent.Spec().Id())
 		log.Info("Token set " + agent.Spec().Token())
 	}
 
 	if operation == "DELETE" {
-		tokenID := agent.Spec().ID()
+		tokenID := agent.Spec().Id()
 		agentPools, _ := queryAgentPools(ctxTfe, client, org)
 		agentPool, queryErr := queryAgentPlByName(agentPools, agentPl)
 		if queryErr != nil {
