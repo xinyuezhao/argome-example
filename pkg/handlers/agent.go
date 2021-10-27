@@ -101,7 +101,7 @@ func AgentHandler(ctx context.Context, event mo.Event) error {
 		return err
 	}
 	if operation == "CREATE" {
-		log.Info("token sent " + agent.Spec().Token())
+		log.Info("token is " + agent.Spec().Token())
 		if agent.Spec().Token() == "" {
 			log.Info("create agent without token")
 			agentToken, err := createAgentToken(ctxTfe, client, agentPl, org, agent.Spec().Description())
