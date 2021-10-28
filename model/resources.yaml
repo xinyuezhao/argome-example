@@ -34,6 +34,7 @@ spec:
       type: string
     - prop: token
       type: string
+      userAccess: invisible
 ---
 kind: ResourceHandler
 metadata:

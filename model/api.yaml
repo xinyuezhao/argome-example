@@ -4,7 +4,7 @@ apiVersion: example.argo.cisco.com/v1
 kind: ApiDef
 metadata:
   name: example
-  scope: openapi
+  scope: deployment
 spec:
   title: example
   description: TBD

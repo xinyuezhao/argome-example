@@ -4,8 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	tfe "github.com/hashicorp/go-tfe"
-
+	"github.com/hashicorp/go-tfe"
 	"golang.cisco.com/argo/pkg/core"
 	"golang.cisco.com/argo/pkg/mo"
 
@@ -150,5 +149,6 @@ func AgentHandler(ctx context.Context, event mo.Event) error {
 			}
 		}
 	}
+
 	return nil
 }
