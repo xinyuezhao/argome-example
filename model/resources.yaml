@@ -49,3 +49,29 @@ spec:
   concurrencyKey: Agent
   function: golang.cisco.com/examples/example/pkg/handlers.AgentHandler
   specStatusDiscriminator: both
+---
+kind: Resource
+metadata:
+  name: TokenList
+  plural: tokenList
+  group: example.argo.cisco.com
+  version: v1
+spec:
+  spec:
+    type: v1.TokenListSpec
+  pkey: spec.agentpool
+  apimethods:
+    - apimethod: GET
+      override: true
+---
+kind: Struct
+metadata:
+  name: TokenListSpec
+  group: example.argo.cisco.com
+  version: v1
+spec:
+  props:
+    - prop: agentpool
+      type: string
+    - prop: tokens
+      type: []string

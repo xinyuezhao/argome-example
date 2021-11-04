@@ -92,6 +92,13 @@ func AgentHandler(ctx context.Context, event mo.Event) error {
 	log.Info("handling Agent", "resource", event.Resource())
 	agent := event.Resource().(examplev1.Agent)
 	log.Info("agent name given " + agent.Spec().Name())
+	stored, err := event.Store().ResolveByID(ctx, event.Resource().Meta().ID())
+	if err != nil {
+		core.LoggerFromContext(ctx).Error(err, "Agent stored not found")
+		return err
+	}
+	log.Info("token stored " + stored.(examplev1.Agent).Spec().Token())
+	log.Info("description stored " + stored.(examplev1.Agent).Spec().Description())
 	agentPl := agent.Spec().Agentpool()
 	org := agent.Spec().Organization()
 	operation := string(event.Operation())
