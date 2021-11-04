@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"github.com/hashicorp/go-tfe"
@@ -108,7 +109,6 @@ func AgentHandler(ctx context.Context, event mo.Event) error {
 		return err
 	}
 	if operation == "CREATE" {
-		log.Info("token is " + agent.Spec().Token())
 		if agent.Spec().Token() == "" {
 			log.Info("create agent without token")
 			agentToken, agentPlID, err := createAgentToken(ctxTfe, client, agentPl, org, agent.Spec().Description())
@@ -157,5 +157,20 @@ func AgentHandler(ctx context.Context, event mo.Event) error {
 		}
 	}
 
+	return nil
+}
+
+func AgentValidator(ctx context.Context, event mo.Validation) error {
+	log := core.LoggerFromContext(ctx)
+	log.Info("validate Agent", "resource", event.Resource())
+	agent := event.Resource().(examplev1.Agent)
+	desc := agent.Spec().Description()
+	log.Info("validate desc " + desc)
+	log.Info("validate agentpool " + agent.Spec().Agentpool())
+	log.Info("validate organization " + agent.Spec().Organization())
+	if desc == "" {
+		err := core.NewError(errors.New("agent description can't be blank"))
+		return err
+	}
 	return nil
 }

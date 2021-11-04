@@ -50,6 +50,17 @@ spec:
   function: golang.cisco.com/examples/example/pkg/handlers.AgentHandler
   specStatusDiscriminator: both
 ---
+kind: ValidationHandler
+metadata:
+  name: AgentValidator
+spec:
+  resource: example.argo.cisco.com/v1.Agent
+  operations:
+    - CREATE
+    - UPDATE
+    - DELETE
+  function: golang.cisco.com/examples/example/pkg/handlers.AgentValidator
+---
 kind: Resource
 metadata:
   name: TokenList
