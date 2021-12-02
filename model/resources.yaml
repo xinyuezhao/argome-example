@@ -7,9 +7,10 @@ metadata:
 spec:
   spec:
     type: v1.AgentSpec
-  pkey: spec.description
+  pkey: spec.name
   apimethods:
     - apimethod: GET
+      override: true
     - apimethod: POST
     - apimethod: DELETE
 ---
@@ -22,7 +23,7 @@ spec:
   props:
     - prop: description
       type: string
-    - prop: id
+    - prop: tokenId
       type: string
     - prop: agentpool
       type: string
@@ -34,7 +35,10 @@ spec:
       type: string
     - prop: token
       type: string
-      userAccess: invisible
+    - prop: status
+      type: string
+    - prop: agentId
+      type: string
 ---
 kind: ResourceHandler
 metadata:
@@ -45,7 +49,7 @@ spec:
     - CREATE
     - DELETE
   retryStrategy:
-    delay: 500
+    delay: 0
   concurrencyKey: Agent
   function: golang.cisco.com/examples/example/pkg/handlers.AgentHandler
   specStatusDiscriminator: both
@@ -57,7 +61,6 @@ spec:
   resource: example.argo.cisco.com/v1.Agent
   operations:
     - CREATE
-    - UPDATE
     - DELETE
   function: golang.cisco.com/examples/example/pkg/handlers.AgentValidator
 ---
