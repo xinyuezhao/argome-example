@@ -142,7 +142,7 @@ func GETAgentOverride(ctx context.Context, event *examplev1.AgentDbReadEvent) (e
 	agentId := conf.QueryAgentId(ctx, agents, name)
 	// call feature api to get status
 	// localhost
-	// https://10.23.248.65/api/config/dn/appinstances/cisco-argome
+	// https://10.23.248.67/api/config/dn/appinstances/cisco-argome
 	// whether query feature instance operstate right after it was created?
 	features, err := conf.QueryFeatures(ctx, TLSclient)
 	if err != nil {
@@ -174,18 +174,21 @@ func ListOverride(ctx context.Context, event *mo.TypeHandlerEvent) ([]examplev1.
 	log := core.LoggerFromContext(ctx)
 	objs := event.Resolver.ResolveByKind(ctx, examplev1.AgentMeta().MetaKey())
 	result := make([]examplev1.Agent, 0)
-	TLSclient := configTLSClient(ctx)
-	_, TFEclient, err := configTFC()
+	TLSclient := conf.ConfigTLSClient(ctx)
+	_, TFEclient, err := conf.ConfigTFC()
 	if err != nil {
+		log.Info("error during config TFC")
 		return nil, http.StatusInternalServerError, err
 	}
 	features, err := conf.QueryFeatures(ctx, TLSclient)
 	if err != nil {
+		log.Info("error during querying features")
 		return nil, http.StatusInternalServerError, err
 	}
 	for _, obj := range objs {
 		payloadObject := obj.(examplev1.Agent)
-		if err := core.NewError(payloadObject.Spec().MutableAgentSpecV1Example().SetToken("********")); err != nil {
+		if err := core.NewError(payloadObject.SpecMutable().SetToken("********")); err != nil {
+			log.Info("error during set token")
 			return nil, http.StatusInternalServerError, err
 		}
 		// get agentPoolId
@@ -193,6 +196,7 @@ func ListOverride(ctx context.Context, event *mo.TypeHandlerEvent) ([]examplev1.
 		// get agentId by agentPoolId & agentName
 		agents, err := conf.QueryAgents(ctx, TLSclient, TFEclient, agentPlId)
 		if err != nil {
+			log.Info("error during querying agents")
 			return nil, http.StatusInternalServerError, err
 		}
 		name := payloadObject.Spec().Name()
@@ -207,11 +211,13 @@ func ListOverride(ctx context.Context, event *mo.TypeHandlerEvent) ([]examplev1.
 		if status == "Running" {
 			if agentId != "" {
 				log.Info("query agents' status " + agentId)
-				status, err := queryAgentStatus(ctx, agentId)
+				status, err := conf.QueryAgentStatus(ctx, agentId)
 				if err != nil {
+					log.Info("error during querying agent status")
 					return nil, http.StatusInternalServerError, err
 				}
-				if err := core.NewError(payloadObject.Spec().MutableAgentSpecV1Example().SetStatus(status)); err != nil {
+				if err := core.NewError(payloadObject.SpecMutable().SetStatus(status)); err != nil {
+					log.Info("error during set status")
 					return nil, http.StatusInternalServerError, err
 				}
 			}

@@ -3,14 +3,12 @@ package handlers
 import (
 	"bytes"
 	"context"
-	"crypto/tls"
 	"encoding/json"
 	"fmt"
 	"net/http"
 	"net/http/httputil"
 	"time"
 
-	"github.com/hashicorp/go-tfe"
 	"golang.cisco.com/argo/pkg/core"
 	"golang.cisco.com/argo/pkg/mo"
 	"golang.cisco.com/argo/pkg/model"
@@ -19,108 +17,6 @@ import (
 	"golang.cisco.com/examples/example/pkg/conf"
 )
 
-func configTFC() (context.Context, *tfe.Client, error) {
-	config := &tfe.Config{
-		Token: "ai1yMKOzv3Mptg.atlasv1.lOseEHJzlB49Vz0fXTlFUFRGGTuugiP3040sr1MGGOkHgRqzQ9FrpiUJzyTH1DzzFTM",
-	}
-	client, err := tfe.NewClient(config)
-	if err != nil {
-		return nil, nil, err
-	}
-	// Create a context
-	ctxTfe := context.Background()
-	return ctxTfe, client, nil
-}
-
-func configTLSClient(ctx context.Context) *http.Client {
-	log := core.LoggerFromContext(ctx)
-	log.Info("config TLS client")
-	tr := &http.Transport{
-		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
-	}
-	client := &http.Client{Transport: tr}
-	return client
-}
-
-// Query agentPool by the name
-func queryAgentPlByName(agentPools []*tfe.AgentPool, name string) (*tfe.AgentPool, error) {
-	for _, agentPl := range agentPools {
-		if agentPl.Name == name {
-			return agentPl, nil
-		}
-	}
-	return nil, fmt.Errorf(fmt.Sprintf("There is no agentPool named %v", name))
-}
-
-// Query all agentPools for an organization
-func queryAgentPools(ctx context.Context, client *tfe.Client, name string) ([]*tfe.AgentPool, error) {
-	agentPools, err := client.AgentPools.List(ctx, name, tfe.AgentPoolListOptions{})
-	if err != nil {
-		return nil, err
-	}
-	res := agentPools.Items
-	return res, nil
-}
-
-// Create a new agentToken
-func createAgentToken(ctx context.Context, client *tfe.Client, agentPool, organization, desc string) (*tfe.AgentToken, string, error) {
-	agentPools, _ := queryAgentPools(ctx, client, organization)
-	agentPl, queryErr := queryAgentPlByName(agentPools, agentPool)
-	if queryErr != nil {
-		return nil, "", queryErr
-	}
-	agentToken, err := client.AgentTokens.Generate(ctx, agentPl.ID, tfe.AgentTokenGenerateOptions{Description: &desc})
-	if err != nil {
-		return nil, "", err
-	}
-	agentPlID := agentPl.ID
-	return agentToken, agentPlID, nil
-}
-
-// Delete an existing agentToken
-func removeAgentToken(ctx context.Context, client *tfe.Client, agentTokenID string) error {
-	err := client.AgentTokens.Delete(ctx, agentTokenID)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-// Delete an existing feature instance to stop agent
-func delFeatureInstance(ctx context.Context, client *http.Client, name string) error {
-	log := core.LoggerFromContext(ctx)
-	payload := map[string]string{
-		"featureName": conf.FeatureName,
-		"app":         conf.App,
-		"instance":    name,
-		"version":     conf.Version,
-		"vendor":      conf.Vendor,
-	}
-	payloadBuf := new(bytes.Buffer)
-	json.NewEncoder(payloadBuf).Encode(payload)
-	req, err := http.NewRequest(http.MethodPost, "https://10.23.248.65/api/config/delfeatureinstance", payloadBuf)
-	req.Header.Set("Cookie", conf.Cookie)
-	if err != nil {
-		return err
-	}
-	req.Header.Set("Content-Type", "application/json")
-	resp, err := client.Do(req)
-	if err != nil {
-		return err
-	}
-	b, err := httputil.DumpResponse(resp, true)
-	log.Info(fmt.Sprintf("parsing response data %s", string(b)))
-	if err != nil {
-		return err
-	}
-	defer resp.Body.Close()
-	if resp.StatusCode != 200 {
-		err := core.NewError(fmt.Errorf("error! Response content: %s", string(b)))
-		return err
-	}
-	return nil
-}
-
 func AgentHandler(ctx context.Context, event mo.Event) error {
 	log := core.LoggerFromContext(ctx)
 	log.Info("handling Agent", "resource", event.Resource())
@@ -128,7 +24,7 @@ func AgentHandler(ctx context.Context, event mo.Event) error {
 	agentPl := agent.Spec().Agentpool()
 	org := agent.Spec().Organization()
 	name := agent.Spec().Name()
-	ctxTfe, client, err := configTFC()
+	ctxTfe, client, err := conf.ConfigTFC()
 	if err != nil {
 		return err
 	}
@@ -136,7 +32,7 @@ func AgentHandler(ctx context.Context, event mo.Event) error {
 		// TODO: Add logic to set status. Currently set 'created' as default.
 		if agent.Spec().Token() == "" {
 			log.Info("create agent without token")
-			agentToken, agentPlID, err := createAgentToken(ctxTfe, client, agentPl, org, agent.Spec().Description())
+			agentToken, agentPlID, err := conf.CreateAgentToken(ctxTfe, client, agentPl, org, agent.Spec().Description())
 			if err != nil {
 				return err
 			}
@@ -149,11 +45,11 @@ func AgentHandler(ctx context.Context, event mo.Event) error {
 		}
 		token := agent.Spec().Token()
 		if agent.Spec().AgentpoolId() == "" {
-			agentpools, err := queryAgentPools(ctxTfe, client, org)
+			agentpools, err := conf.QueryAgentPools(ctxTfe, client, org)
 			if err != nil {
 				return err
 			}
-			agentpool, err := queryAgentPlByName(agentpools, agentPl)
+			agentpool, err := conf.QueryAgentPlByName(agentpools, agentPl)
 			if err != nil {
 				return err
 			}
@@ -163,7 +59,7 @@ func AgentHandler(ctx context.Context, event mo.Event) error {
 		}
 		agent.SpecMutable().SetStatus("created")
 		// api call creating feature instance to deploy agent
-		TLSclient := configTLSClient(ctx)
+		TLSclient := conf.ConfigTLSClient(ctx)
 		param := map[string]string{"token": token, "name": name}
 		body := map[string]interface{}{
 			"vendor":           conf.Vendor,
@@ -176,7 +72,7 @@ func AgentHandler(ctx context.Context, event mo.Event) error {
 
 		payloadBuf := new(bytes.Buffer)
 		json.NewEncoder(payloadBuf).Encode(body)
-		req, e := http.NewRequest(http.MethodPost, "https://10.23.248.65/api/config/createfeatureinstance", payloadBuf)
+		req, e := http.NewRequest(http.MethodPost, "https://10.23.248.67/api/config/createfeatureinstance", payloadBuf)
 		// req, e := http.NewRequest(http.MethodPost, "http://localhost:9090/api/config/createfeatureinstance", payloadBuf)
 		if e != nil {
 			return e
@@ -235,16 +131,16 @@ func AgentHandler(ctx context.Context, event mo.Event) error {
 	if event.Operation() == model.DELETE {
 		tokenID := agent.Spec().TokenId()
 		// delete feature instance to stop the agent
-		TLSclient := configTLSClient(ctx)
+		TLSclient := conf.ConfigTLSClient(ctx)
 		log.Info("before delete agent feature instance")
-		err := delFeatureInstance(ctx, TLSclient, name)
+		err := conf.DelFeatureInstance(ctx, TLSclient, name)
 		if err != nil {
 			return err
 		}
 		log.Info("after deleting feature instance")
 		log.Info("remove agentToken")
 		time.Sleep(10 * time.Second)
-		removeErr := removeAgentToken(ctxTfe, client, tokenID)
+		removeErr := conf.RemoveAgentToken(ctxTfe, client, tokenID)
 		if removeErr != nil {
 			return removeErr
 		}
